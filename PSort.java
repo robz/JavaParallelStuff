@@ -1,4 +1,8 @@
 public class PSort implements Runnable {
+	static int total_threads = 0,
+		   num_threads = 0,
+		   max_threads = -1;
+
 	public static void main(String[] args) {
 		int[] arr = new int[10000];
 		genArr(arr, 0, 10000);
@@ -6,7 +10,9 @@ public class PSort implements Runnable {
 		// printArr(arr, 0, arr.length);	
 		parallelSort(arr, 0, arr.length);
 		// printArr(arr, 0, arr.length);
-		System.out.println(isSorted(arr));
+		System.out.println("sorted correctly: "+isSorted(arr));
+		System.out.println("most threads active: "+max_threads);
+		System.out.println("total threads created: "+total_threads);
 	}
 
 	public static void genArr(int[] arr, int min, int max) {
@@ -48,8 +54,22 @@ public class PSort implements Runnable {
 		this.end = end;
 	}
 
+	public synchronized void count() {
+		num_threads++;
+		total_threads++;
+		if (num_threads > max_threads) {
+			max_threads = num_threads;
+		}
+	}
+
+	public synchronized void substract() {
+		num_threads--;
+	}
+
 	public void run() {
+		count();
 		parallelSort(this.A, this.begin, this.end);
+		substract();
 	}
 
 	public static void parallelSort(int[] A, int begin, int end) {
