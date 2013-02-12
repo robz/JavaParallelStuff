@@ -1,10 +1,4 @@
 public class MonkeyKing {
-    final static int NO_FLOW = 0,
-                     GOING_LEFT = 1,
-                     GOING_RIGHT = 2;
-
-    int trafficDirection,
-        monkeysOnRope;
 
     static Monkey monkeys[] = new Monkey[100];
 
@@ -12,10 +6,46 @@ public class MonkeyKing {
         MonkeyKing king = new MonkeyKing();
     
         for (int i =0; i < monkeys.length; i++) {
-            monkeys[i] = new Monkey(king, 0==(int)(Math.random()*2));
+            monkeys[i] = new Monkey(king, 0 == (int)(Math.random()*2), 3);
             new Thread(monkeys[i]).start();
         } 
     }
+    
+    final static int NO_FLOW = 0,
+                     GOING_LEFT = 1,
+                     GOING_RIGHT = 2;
+
+    int trafficDirection,
+        monkeysOnRope;
+
+    public MonkeyKing() {
+        trafficDirection = NO_FLOW;
+        monkeysOnRope = 0;
+    }
+
+    public synchronized void ClimbRope(int direction) {
+        while (monkeysOnRope > 0 && 
+               !(monkeysOnRope < 3 && trafficDirection == direction)) {
+            try {
+                wait();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        // System.out.println("monkey going "+((direction == GOING_LEFT) ? "left" : "right"));
+
+        monkeysOnRope += 1;
+        trafficDirection = direction;
+    }
+
+    public synchronized void LeaveRope() {
+        monkeysOnRope -= 1;
+        // System.out.println("monkey leaving "+((trafficDirection == GOING_LEFT) ? "left" : "right"));
+        notifyAll(); 
+    }
+    
+    // for testing purposes:
 
     static class Monkey implements Runnable {
         final static boolean ON_LEFT = true,
@@ -26,10 +56,12 @@ public class MonkeyKing {
         // false = right side, true = left side
         boolean side;
         public int direction;
+        int runs;
         
-        public Monkey(MonkeyKing king, boolean side) {
+        public Monkey(MonkeyKing king, boolean side, int runs) {
             this.king = king;
             this.side = side;
+            this.runs = runs;
         }
 
         static synchronized void checkMonkeys(MonkeyKing king) {
@@ -62,14 +94,14 @@ public class MonkeyKing {
         }
 
         public void run() {
-            while (true) {
+            for (int i = 0; i < runs; i++) {
                 king.ClimbRope(getDesiredDirection());
                 direction = getDesiredDirection();
                 
                 checkMonkeys(king);
                 
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(10 + ((int)(Math.random()*10)));
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -79,31 +111,5 @@ public class MonkeyKing {
                 king.LeaveRope();
             }
         }
-    }
-
-    public MonkeyKing() {
-        trafficDirection = NO_FLOW;
-        monkeysOnRope = 0;
-    }
-
-    public synchronized void ClimbRope(int direction) {
-        while (monkeysOnRope > 0 && 
-               !(monkeysOnRope < 3 && trafficDirection == direction)) {
-            try {
-                wait();
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-        }
-
-        monkeysOnRope += 1;
-        trafficDirection = direction;
-
-        notifyAll(); // to alert any monkeys going in the same direction
-    }
-
-    public synchronized void LeaveRope() {
-        monkeysOnRope -= 1;
-        notifyAll(); // just notify should be fine though
     }
 }
