@@ -75,19 +75,18 @@ class TCPInterface extends NetworkInterface {
         String response = null;
 
         try {
+            System.out.println("sending \"" + msg + "\" to "
+                + address + " on port " + port);
+            
             socket = new Socket(address, port);
 
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             BufferedReader in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream()));
-    
-            System.out.println("sending \"" + msg + "\" to "
-                + address + " on port " + port);
         
             out.writeBytes(msg);
             response = in.readLine();
         } catch (Exception ex) {
-            // ex.printStackTrace();
             System.out.println(ex.toString());
             response = "Exception: see console for details";
         } finally {
