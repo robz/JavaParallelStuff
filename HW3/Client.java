@@ -7,12 +7,20 @@ import java.net.*;
 import java.io.*;
 
 public class Client {
+    static final boolean USE_UDP = true;
     static final String DEFAULT_IP = "127.0.0.1";
     static final int PORT = 8800;
 
     public static void main(String[] args) {
-        // JFrame gui = new GUI(new UDPInterface(PORT));
-        JFrame gui = new GUI(new TCPInterface(PORT), DEFAULT_IP);
+        NetworkInterface ni = null;
+
+        if (USE_UDP) {
+            ni = new UDPInterface(PORT);
+        } else {
+            ni = new TCPInterface(PORT);
+        }
+
+        JFrame gui = new GUI(ni, DEFAULT_IP);
         gui.setBounds(50, 50, 500, 600);
         gui.setVisible(true);
     }
