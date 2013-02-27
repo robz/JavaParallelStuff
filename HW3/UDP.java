@@ -1,63 +1,98 @@
 import java.net.*;
 import java.io.*;
+import java.util.concurrent.*;
 
-public class UDP{
+public class UDP extends Thread {
 	private final static int c = 30; //number of seats in the theater
 	private final static int port = 8800;
 	private final static int len = 1024; //just following his example
 	
 	private static boolean[] seatOccupied;
 	private static int currentCount;
-	//private DatagramPacket receivePacket, returnPacket;
-	//private byte[] buffer = new byte[len];
+	private static DatagramSocket socket;
+	private static InetAddress address;
+	private static int outport;
+	
+	public static String receiveMessage;
+	
+	
+	public UDP() {
+		//seatOccupied = new boolean[c];
+		//currentCount = 0;
+	}
+	
+	
 	
 	public static void main(String[] args) throws Exception {
-		DatagramSocket socket = new DatagramSocket(port);
-		byte[] receiveBuffer = new byte[len];
-		byte[] returnBuffer = new byte[len];
-		currentCount = 0;
 		seatOccupied = new boolean[c];
+		currentCount = 0;
+		socket = new DatagramSocket(port);
+		
+		byte[] receiveBuffer = new byte[len];
 		
 		while(true) {
 			
 			DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
 			socket.receive(receivePacket);
-			String receiveMessage = new String(receivePacket.getData());
+			address = receivePacket.getAddress();
+			outport = receivePacket.getPort();
+			receiveMessage = new String(receivePacket.getData());
 			
-			String response = selectRequest(receiveMessage);
-			
-			String returnMessage = "Received Packet";
-			returnBuffer = returnMessage.getBytes();
-			//returnPacket = new DatagramPacket(returnBuffer);
+			UDP t = new UDP();
+			t.start();
 			
 		}
-		
-		
 	}
 	
-	public static synchronized String selectRequest(String message) {
+	//************************************************************************
+	
+	public static String selectRequest(String message) {
 		String[] parts = message.split(" ");
-		String ret;
 		
 		if(parts[0].equals("reserve"))
 			return reserve(message);
 		else if(parts[0].equals("search"))
 			return search(message);
 		else if(parts[0].equals("delete"))
-			return search(message);
+			return delete(message);
 		
 		return "hello";
 	}
 	
-	public static String reserve(String message) {
+	public static synchronized String reserve(String message) {
 		
 		
 		return "hello";
 	}
 	
-	public static String search(String message) {
+	public static synchronized String search(String message) {
 		
 		
 		return "hello";
+	}
+	
+	public static synchronized String delete(String message) {
+		
+		
+		
+		return "hello";
+	}
+	
+	public static synchronized void sendPacket(String message) throws IOException {
+		byte[] sendBuffer = new byte[len];
+		sendBuffer = message.getBytes();
+		DatagramPacket returnPacket = new DatagramPacket(sendBuffer, sendBuffer.length, address, outport);
+		socket.send(returnPacket);
+	}
+
+	//************************************************************************
+	
+	public void run() {
+		String str = selectRequest(receiveMessage);
+		try {
+			sendPacket(str);
+		} catch (Exception e) {
+			
+		}
 	}
 }
