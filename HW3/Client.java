@@ -2,52 +2,91 @@ import javax.swing.*;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
 import java.net.*;
+import java.io.*;
 
 public class Client {
+    static final String DEFAULT_IP = "127.0.0.1";
+    static final int PORT = 8800;
+
     public static void main(String[] args) {
-        NetworkInterface ni = new UDPInterface(8800);
-        JFrame gui = new GUI(ni);
+        // JFrame gui = new GUI(new UDPInterface(PORT));
+        JFrame gui = new GUI(new TCPInterface(PORT), DEFAULT_IP);
         gui.setBounds(50, 50, 500, 600);
         gui.setVisible(true);
     }
 }
 
-interface NetworkInterface {
-    public String reserve(String address, String name, int count);
-    public String search(String address, String name);
-    public String delete(String address, String name);
-};
-
-class TCPInterface implements NetworkInterface {
-    public TCPInterface() {
-
-    }
-
-    public String reserve(String address, String name, int count) {
-        return null;
-    }
-
-    public String search(String address, String name) {
-        return null;
-    }
-
-    public String delete(String address, String name) {
-        return null;
-    }
-}
-
-class UDPInterface implements NetworkInterface {
+abstract class NetworkInterface {
     static final int RESPONSE_SIZE = 1024,
                      TIMEOUT = 2000;
 
+    abstract protected String sendMsg(String address, String msg);
+
+    public String reserve(String address, String name, int count) {
+        return sendMsg(address, "reserve " + name + " " + count);
+    }
+
+    public String search(String address, String name) {
+        return sendMsg(address, "search " + name);
+    }
+
+    public String delete(String address, String name) {
+        return sendMsg(address, "delete " + name);
+    }
+}
+
+class TCPInterface extends NetworkInterface {
+    int port;
+
+    public TCPInterface(int port) {
+        this.port = port;
+    }
+
+    protected String sendMsg(String address, String msg) {
+        Socket socket = null;
+        String response = null;
+
+        try {
+            socket = new Socket(address, port);
+
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            BufferedReader in = new BufferedReader(
+                new InputStreamReader(socket.getInputStream()));
+    
+            System.out.println("sending \"" + msg + "\" to "
+                + address + " on port " + port);
+        
+            out.writeBytes(msg);
+            response = in.readLine();
+        } catch (Exception ex) {
+            // ex.printStackTrace();
+            System.out.println(ex.toString());
+            response = "Exception: see console for details";
+        } finally {
+            try {
+                if (socket != null) {
+                    socket.close();
+                } 
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                response = "Exception while closing socket: see console for details";
+            }
+        }
+
+        return response;
+    }
+}
+
+class UDPInterface extends NetworkInterface {
     int port;
 
     public UDPInterface(int port) {
         this.port = port;
     }    
 
-    private String sendMsg(String address, String msg) {
+    protected String sendMsg(String address, String msg) {
         DatagramSocket socket = null;
         String response = null;
 
@@ -68,8 +107,9 @@ class UDPInterface implements NetworkInterface {
             socket.receive(packet);
             
             response = new String(packet.getData());
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            // ex.printStackTrace();
+            System.out.println(ex.toString());
             response = "Exception: see console for details";
         } finally {
             if(socket != null) {
@@ -79,18 +119,6 @@ class UDPInterface implements NetworkInterface {
 
         return response;
     }
-
-    public String reserve(String address, String name, int count) {
-        return sendMsg(address, "reserve " + name + " " + count);
-    }
-
-    public String search(String address, String name) {
-        return sendMsg(address, "search " + name);
-    }
-
-    public String delete(String address, String name) {
-        return sendMsg(address, "delete " + name);
-    }
 }
 
 class GUI extends JFrame implements ActionListener {
@@ -99,13 +127,13 @@ class GUI extends JFrame implements ActionListener {
     JButton reserveBtn, searchBtn, deleteBtn;
     JTextArea responseArea;
 
-    public GUI(NetworkInterface ni) {
+    public GUI(NetworkInterface ni, String defaultAddress) {
         this.ni = ni;
 
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(7, 1));
 
-        addressField = new JTextField("128.12.0.1");
+        addressField = new JTextField(defaultAddress);
         nameField = new JTextField();
         countField = new JTextField();
         reserveBtn = new JButton("reserve(name, count)");
