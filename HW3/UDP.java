@@ -11,57 +11,45 @@ public class UDP extends Thread {
 	
 	private static boolean[] seatOccupied;
 	private static int currentAvailable;
-	private static DatagramSocket socket;
-	private static InetAddress address;
-	private static int outport;
-	
-	private static String receiveMessage;
 	private static HashMap<String,ArrayList<Integer>> names;
+    private static DatagramSocket socket;
+
+	private InetAddress address;
+	private int outport;
+	private String receiveMessage;
 	
-	public UDP() {
-		//seatOccupied = new boolean[c];
-		//currentCount = 0;
+	public UDP(String receiveMessage, int outport, InetAddress address) {
+        this.address = address;
+        this.outport = outport;
+        this.receiveMessage = receiveMessage;
 	}
-	
-	
 	
 	public static void main(String[] args) throws Exception {
 		seatOccupied = new boolean[c]; //should all be initialized to false
 		currentAvailable = c;
-		socket = new DatagramSocket(port);
 		names = new HashMap<String, ArrayList<Integer>>();
-		
-		
+
+		socket = new DatagramSocket(port);
 		
 		while(true) {
 			byte[] receiveBuffer = new byte[len];
+
 			DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
 			socket.receive(receivePacket);
-			address = receivePacket.getAddress();
-			outport = receivePacket.getPort();
-			receiveMessage = new String(receivePacket.getData());
 			
-			//System.out.println(receiveMessage);
-			UDP t = new UDP();
+            InetAddress address = receivePacket.getAddress();
+			int outport = receivePacket.getPort();
+			String receiveMessage = new String(receivePacket.getData());
+			
+			System.out.println("received: "+receiveMessage);
+
+			UDP t = new UDP(receiveMessage, outport, address);
 			t.start();
-			
 		}
 	}
 	
 	//************************************************************************
 	
-	public static String selectRequest(String message) {
-		String[] parts = message.split(" ");
-		
-		if(parts[0].equals("reserve"))
-			return reserve(message);
-		else if(parts[0].equals("search"))
-			return search(message);
-		else if(parts[0].equals("delete"))
-			return delete(message);
-		
-		return "hello";
-	}
 	
 	public static synchronized String reserve(String message) {
 		String[] parts = message.split("\\W+");
@@ -159,15 +147,29 @@ public class UDP extends Thread {
 		return ret;
 	}
 	
-	public static synchronized void sendPacket(String message) throws IOException {
+
+	//************************************************************************
+	
+	public String selectRequest(String message) {
+		String[] parts = message.split(" ");
+		
+		if(parts[0].equals("reserve"))
+			return reserve(message);
+		else if(parts[0].equals("search"))
+			return search(message);
+		else if(parts[0].equals("delete"))
+			return delete(message);
+		
+		return "hello";
+	}
+
+	public void sendPacket(String message) throws IOException {
 		byte[] sendBuffer = new byte[len];
 		sendBuffer = message.getBytes();
 		DatagramPacket returnPacket = new DatagramPacket(sendBuffer, sendBuffer.length, address, outport);
 		socket.send(returnPacket);
 	}
 
-	//************************************************************************
-	
 	public void run() {
 		String str = selectRequest(receiveMessage);
 		try {
