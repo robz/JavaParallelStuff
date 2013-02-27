@@ -7,11 +7,29 @@ import java.net.*;
 import java.io.*;
 
 public class Client {
-    static final boolean USE_UDP = true;
+    static boolean USE_UDP = true;
     static final String DEFAULT_IP = "127.0.0.1";
     static final int PORT = 8800;
 
     public static void main(String[] args) {
+        if (1 == args.length) {
+            String protocol = args[0].toLowerCase();
+
+            if (protocol.equals("tcp")) {
+                USE_UDP = false;
+            } else if (protocol.equals("udp")) {
+                USE_UDP = true;
+            } else {
+                System.out.println("Error: only TCP or UDP supported\n"
+                    + "usage:\n$ java Client [TCP|UDP]");
+                return;
+            }
+        } else if (1 < args.length) {
+            System.out.println("Error: too many arguments\n"
+                + "usage:\n$ java Client [TCP|UDP]");
+            return;
+        }
+
         NetworkInterface ni = null;
 
         if (USE_UDP) {
@@ -74,7 +92,7 @@ class TCPInterface extends NetworkInterface {
             response = "Exception: see console for details";
         } finally {
             try {
-                if (socket != null) {
+                if (null != socket) {
                     socket.close();
                 } 
             } catch (IOException ex) {
@@ -116,11 +134,10 @@ class UDPInterface extends NetworkInterface {
             
             response = new String(packet.getData());
         } catch (Exception ex) {
-            // ex.printStackTrace();
             System.out.println(ex.toString());
             response = "Exception: see console for details";
         } finally {
-            if(socket != null) {
+            if (null != socket) {
                 socket.close();
             }
         }
@@ -180,10 +197,13 @@ class GUI extends JFrame implements ActionListener {
         reserveBtn.addActionListener(this);
         searchBtn.addActionListener(this);
         deleteBtn.addActionListener(this);
+        
+        responseArea.setLineWrap(true);
+        responseArea.setEditable(false);
     }
 
     private boolean isValidName(String name) {
-        if (name == null || name.equals("")) {
+        if (null == name || name.equals("")) {
             return false;
         }
 
@@ -191,11 +211,12 @@ class GUI extends JFrame implements ActionListener {
     }
 
     private boolean isValidAddress(String address) {
-        if (address == null || address.equals("")) {
+        if (null == address || address.equals("")) {
             return false;
         }
 
-        return address.matches("(([0-1]?[0-9]{1,2}\\.)|(2[0-4][0-9]\\.)|(25[0-5]\\.)){3}(([0-1]?[0-9]{1,2})|(2[0-4][0-9])|(25[0-5]))");
+        return address.matches("(([0-1]?[0-9]{1,2}\\.)|(2[0-4][0-9]\\.)"
+            + "|(25[0-5]\\.)){3}(([0-1]?[0-9]{1,2})|(2[0-4][0-9])|(25[0-5]))");
     }
 
     public void actionPerformed(ActionEvent e) {
