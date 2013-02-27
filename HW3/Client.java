@@ -1,8 +1,13 @@
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
 public class Client {
     public static void main(String[] args) {
-        System.out.println("hi!");
+        NetworkInterface ni = new UDPInterface();
+        JFrame gui = new GUI(ni);
+        gui.setBounds(50, 50, 500, 600);
+        gui.setVisible(true);
     }
 }
 
@@ -40,10 +45,11 @@ class UDPInterface implements NetworkInterface {
     }
 }
 
-class GUI extends JFrame extends ActionListener {
+class GUI extends JFrame implements ActionListener {
     NetworkInterface ni;    
     JTextField nameField, countField;
     JButton reserveBtn, searchBtn, deleteBtn;
+    JTextArea responseArea;
 
     public GUI(NetworkInterface ni) {
         this.ni = ni;
@@ -56,17 +62,65 @@ class GUI extends JFrame extends ActionListener {
         reserveBtn = new JButton("reserve(name, count)");
         searchBtn = new JButton("search(name)");
         deleteBtn = new JButton("delete(name)");
+        responseArea = new JTextArea("<server response>");
+
+        JPanel namePanel = new JPanel();
+        namePanel.setLayout(new GridLayout(1, 2));
+
+        JPanel countPanel = new JPanel();
+        countPanel.setLayout(new GridLayout(1, 2));
+
+        namePanel.add(new JLabel("Enter name:", JLabel.CENTER));
+        namePanel.add(nameField);
+
+        countPanel.add(new JLabel("Enter reservation count:", JLabel.CENTER));
+        countPanel.add(countField);
+
+        panel.add(namePanel);
+        panel.add(countPanel);
+        panel.add(reserveBtn);
+        panel.add(searchBtn);
+        panel.add(deleteBtn);
+        panel.add(responseArea);
 
         this.setContentPane(panel);
+
+        reserveBtn.addActionListener(this);
+        searchBtn.addActionListener(this);
+        deleteBtn.addActionListener(this);
     }
 
-    public void actionListener(ActionEvent e) {
-        if (e.getSource().equals(reserveBtn)) {
+    public void actionPerformed(ActionEvent e) {
+        String name = nameField.getText(),
+               response = null;
 
-        } else if (e.getSource().equals(searchBtn) {
+        if (name == null || name.equals("")) {
+            response = "Clientside error: that's not a valid name!";
+        } else if (e.getSource().equals(reserveBtn)) {
+            String strCount = countField.getText();
+            int numCount = -1;
 
-        } else if (e.getSource().equals(deleteBtn) {
+            try {
+                numCount = Integer.parseInt(strCount);
+                
+                System.out.println("reserving "+numCount+" spots for "+name);
+                
+                response = ni.reserve(name, numCount);
+            } catch (NumberFormatException ex) {
+                response = "Clientside error: {"+strCount+"} is not a valid number!";
+            }
+        } else if (e.getSource().equals(searchBtn)) {
+            System.out.println("searching for "+name+"'s reservations");
+            
+            response = ni.search(name);
+        } else if (e.getSource().equals(deleteBtn)) {
+            System.out.println("deleting "+name+"'s reservations"); 
 
+            response = ni.delete(name);
+        } else {
+            response = "Clientside error: what button is that?";
         }
+
+        responseArea.setText(response);
     }    
 }
