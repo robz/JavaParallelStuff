@@ -31,16 +31,17 @@ public class UDP extends Thread {
 		socket = new DatagramSocket(port);
 		names = new HashMap<String, ArrayList<Integer>>();
 		
-		byte[] receiveBuffer = new byte[len];
+		
 		
 		while(true) {
-			
+			byte[] receiveBuffer = new byte[len];
 			DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
 			socket.receive(receivePacket);
 			address = receivePacket.getAddress();
 			outport = receivePacket.getPort();
 			receiveMessage = new String(receivePacket.getData());
 			
+			//System.out.println(receiveMessage);
 			UDP t = new UDP();
 			t.start();
 			
@@ -63,7 +64,7 @@ public class UDP extends Thread {
 	}
 	
 	public static synchronized String reserve(String message) {
-		String[] parts = message.split(" ");
+		String[] parts = message.split("\\W+");
 		
 		//name exists?
 		if(names.containsKey(parts[1]))
@@ -108,7 +109,7 @@ public class UDP extends Thread {
 	}
 	
 	public static synchronized String search(String message) {
-		String[] parts = message.split(" ");
+		String[] parts = message.split("\\W+");
 		
 		//name not found?
 		if(!names.containsKey(parts[1]))
@@ -131,7 +132,7 @@ public class UDP extends Thread {
 	}
 	
 	public static synchronized String delete(String message) {
-		String[] parts = message.split(" ");
+		String[] parts = message.split("\\W+");
 		
 		//name not found?
 		if(!names.containsKey(parts[1]))
@@ -144,7 +145,7 @@ public class UDP extends Thread {
 		String ret = "Freed up " + curSeats.size() + " seats:";
 		int temp = curSeats.size();
 		for(Integer i : curSeats) {
-			seatOccupied[i] = false;
+			seatOccupied[i-1] = false;
 			ret = ret + " " + i;
 			
 			temp--;
