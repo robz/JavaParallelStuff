@@ -32,11 +32,14 @@ public class Client {
 
         NetworkInterface ni = null;
 
+        /*
         if (USE_UDP) {
             ni = new UDPInterface(PORT);
         } else {
             ni = new TCPInterface(PORT);
         }
+        */
+        ni = new TCPInterface(PORT);
 
         JFrame gui = new GUI(ni, DEFAULT_IP);
         gui.setBounds(50, 50, 500, 600);
@@ -80,12 +83,21 @@ class TCPInterface extends NetworkInterface {
             
             socket = new Socket(address, port);
 
+            System.out.println("created socket");
+            
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             BufferedReader in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream()));
-        
-            out.writeBytes(msg);
+
+            System.out.println("created in and out");
+            
+            out.writeBytes(msg + '\n');
+
+            System.out.println("sent msg");
+            
             response = in.readLine();
+            
+            System.out.println("received response");
         } catch (Exception ex) {
             System.out.println(ex.toString());
             response = "Exception: see console for details";

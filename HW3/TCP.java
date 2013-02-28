@@ -10,52 +10,50 @@ public class TCP extends Thread {
 	
 	private static boolean[] seatOccupied;
 	private static int currentAvailable;
-	private static ServerSocket socket;
-	private static Socket connect;
-	private static BufferedReader read;
-	
-	private static String receiveMessage;
 	private static HashMap<String,ArrayList<Integer>> names;
 	
-	public TCP() {
+	//private static ServerSocket socket;	
+	//private static BufferedReader read;
+	
+	
+	private String receiveMessage;
+	private Socket connection;
+	
+	public TCP(Socket _connection, String _message) {
 		//seatOccupied = new boolean[c];
 		//currentCount = 0;
+		connection = _connection;
+		receiveMessage = _message;
 	}
 	
 	
 	public static void main(String[] args) throws Exception {
 		seatOccupied = new boolean[c]; //should all be initialized to false
 		currentAvailable = c;
-		socket = new ServerSocket(port);
+		ServerSocket socket = new ServerSocket(port);
 		names = new HashMap<String, ArrayList<Integer>>();
 		
 		while(true) {
-			connect = socket.accept();
-			read = new BufferedReader(new InputStreamReader(connect.getInputStream()));
+			Socket connect = socket.accept();
+			BufferedReader read = new BufferedReader(new InputStreamReader(connect.getInputStream()));
+			//DataOutputStream output = new DataOutputStream(connect.getOutputStream());
 			
-			//receiveMessage = read.readLine();
-			//System.out.println(receiveMessage);
+			String message = read.readLine();
+			System.out.println(message);
 			
-			//TCP t = new TCP();
-			//t.start();
-			connect.close();
+			
+			//output.writeBytes(message + '\n');
+			
+			
+			TCP t = new TCP(connect, message);
+			t.start();
+			//connect.close();
 		}
 	}
 	
 	//************************************************************************
 	
-	public static String selectRequest(String message) {
-		String[] parts = message.split(" ");
-		
-		if(parts[0].equals("reserve"))
-			return reserve(message);
-		else if(parts[0].equals("search"))
-			return search(message);
-		else if(parts[0].equals("delete"))
-			return delete(message);
-		
-		return "hello";
-	}
+	
 	
 	public static synchronized String reserve(String message) {
 		String[] parts = message.split("\\W+");
@@ -153,15 +151,32 @@ public class TCP extends Thread {
 		return ret;
 	}
 	
-	public static synchronized void sendPacket(String message) throws IOException {
-		//DataOutputStream output = new DataOutputStream(connect.getOutputStream());
-		//output.writeBytes(message);
-		
-		PrintWriter pout = new PrintWriter(connect.getOutputStream());
-		pout.println(message);
-	}
+	
 
 	//************************************************************************
+	
+	public void sendPacket(String message) throws IOException {
+		
+		DataOutputStream output = new DataOutputStream(connection.getOutputStream());
+		output.writeBytes(message + '\n');
+		
+		//PrintWriter pout = new PrintWriter(connect.getOutputStream());
+		//pout.println(message);
+		
+	}
+	
+	public String selectRequest(String message) {
+		String[] parts = message.split(" ");
+		
+		if(parts[0].equals("reserve"))
+			return reserve(message);
+		else if(parts[0].equals("search"))
+			return search(message);
+		else if(parts[0].equals("delete"))
+			return delete(message);
+		
+		return "hello";
+	}
 	
 	public void run() {
 		String str = selectRequest(receiveMessage);
