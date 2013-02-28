@@ -39,7 +39,7 @@ public class TCP extends Thread {
 			//DataOutputStream output = new DataOutputStream(connect.getOutputStream());
 			
 			String message = read.readLine();
-			System.out.println(message);
+			//System.out.println(message);
 			
 			
 			//output.writeBytes(message + '\n');

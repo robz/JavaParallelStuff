@@ -32,14 +32,11 @@ public class Client {
 
         NetworkInterface ni = null;
 
-        /*
         if (USE_UDP) {
             ni = new UDPInterface(PORT);
         } else {
             ni = new TCPInterface(PORT);
         }
-        */
-        ni = new TCPInterface(PORT);
 
         JFrame gui = new GUI(ni, DEFAULT_IP);
         gui.setBounds(50, 50, 500, 600);
