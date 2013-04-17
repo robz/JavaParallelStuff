@@ -8,14 +8,13 @@ public class Database {
 	private final int c = 30; //number of seats in the theater
 	private boolean[] seatOccupied;
 	private int currentAvailable;
-	private HashMap<String,ArrayList<Integer>> names;
+	private HashMap<String, ArrayList<Integer>> names;
 	
 	
 	public Database() {
 		seatOccupied = new boolean[c]; //should all be initialized to false
 		currentAvailable = c;
 		names = new HashMap<String, ArrayList<Integer>>();
-		
 	}
 	
 
@@ -23,17 +22,41 @@ public class Database {
 		String[] parts = clientMsg.split(" ");
 		String command = parts[0];
 		
-		if(command.equals("reserve")) {
+		if (command.equals("reserve")) {
 			return reserve(clientMsg, returnMsg);
-		} else if(command.equals("search")) {
+		} else if (command.equals("search")) {
 			return search(clientMsg, returnMsg);
-		} else if(command.equals("delete")) {
+		} else if (command.equals("delete")) {
 			return delete(clientMsg, returnMsg);
-		}
+		} else if (command.equals("getAll")) {
+            return getAll(returnMsg);
+        }
 		
 		returnMsg.str = "Error! Unknown command: " + command;
 		return false;
 	}
+
+    public synchronized void parseDatabase(String dbMsg) {
+        System.out.println("parsing " + dbMsg);
+        String[] namesArr = dbMsg.split(";");
+        
+        for (String nameData: namesArr) {
+            String[] tokens = nameData.split(":");
+            
+            String name = tokens[0];
+            String[] roomStrs = tokens[1].split(",");
+            
+            names.put(name, new ArrayList<Integer>());        
+
+            for (String roomStr: roomStrs) {
+                int seatNum = Integer.parseInt(roomStr);
+            
+                seatOccupied[seatNum] = true;
+                currentAvailable -= 1;
+                names.get(name).add(seatNum);
+            }
+        }
+    }
 	
 	
 //*******************************************************************************************
@@ -88,6 +111,33 @@ public class Database {
 		return true;
 	}
 	
+    // database names response format:
+    // name1:[seat#1,seat#2,...];name2:[...];...
+	private boolean getAll(StrPtr returnMsg) {
+        String response = "",
+               outerprefix = "";
+
+        for (String name: names.keySet()) {
+            ArrayList<Integer> seats = names.get(name);
+            String prefix = "";
+
+            response += outerprefix + name + ":";
+
+            for (Integer seat: seats) {
+                response += prefix + seat;
+                prefix = ",";
+            }
+
+            outerprefix = ";";
+        }		
+	
+        System.out.println(response);
+	
+		returnMsg.str = response;
+
+		return true;
+	}
+
 	private boolean search(String message, StrPtr returnMsg) {
 		String[] parts = message.split("\\W+");
 		

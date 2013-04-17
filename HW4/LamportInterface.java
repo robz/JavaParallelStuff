@@ -140,8 +140,7 @@ public class LamportInterface {
 		
 		// Then do the action specified in the message if it's not a no-op
 		if (!clientMsg.equals(NOOP_MSG)) {
-			StrPtr returnMsg = new StrPtr();
-			database.parseMessage(clientMsg, returnMsg);
+			database.parseMessage(clientMsg, new StrPtr());
 		}
 		
 		notify();

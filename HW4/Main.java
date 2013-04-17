@@ -2,12 +2,55 @@ import java.net.*;
 import java.io.*;
 
 public class Main extends Thread {
-	static Server[] SERVERS = new Server[]{
+	static final Server[] SERVERS = new Server[]{
 		new Server(8800, "127.0.0.1"), 
 		new Server(8801, "127.0.0.1"),
 		new Server(8802, "127.0.0.1")
 	};
 	
+    public static boolean sendMsg(Server server, String msg, StrPtr resp) {
+        Socket socket = null;
+
+        try {
+        	int port = server.port;
+        	String address = server.IP;
+        	
+            System.out.println("sending \"" + msg + "\" to "
+                + address + " on port " + port);
+            
+            socket = new Socket(address, port);
+            
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            BufferedReader in = new BufferedReader(
+                new InputStreamReader(socket.getInputStream()));
+            
+            out.writeBytes(msg + '\n');
+            
+            resp.str = in.readLine();
+            
+            System.out.println("received from server: " + resp.str);
+        } catch (IOException ex) {
+        	resp.str = "Connection failed, try again";
+            return false;
+    	} catch (Exception ex) {
+            ex.printStackTrace();
+            resp.str = "Exception: see console for details";
+            return false;
+        } finally {
+            try {
+                if (null != socket) {
+                    socket.close();
+                } 
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                resp.str = "Exception while closing socket: see console for details";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 	public static void main(String[] args) throws Exception {
 		//
 		// Check arguments
@@ -49,13 +92,41 @@ public class Main extends Thread {
 	    ServerSocket socket = new ServerSocket(port);
 		NetworkInterface network = new NetworkInterface(SERVERS, ID);
 		LamportInterface lamport = new LamportInterface(database, network, ID);
-		
+
+        //
+        // Send message to other servers requesting current database
+        //
+        new Thread(new Dumb(port, database)).start();
+
 		//
 		// Begin processing outside requests
 		//
 		Lab4_serviceClients(lamport, socket);
 		//Lab3_serviceClients(database, socket);
 	}
+
+    static public class Dumb implements Runnable {
+        int port;
+        Database db;
+
+        public Dumb(int port, Database db) {
+            this.port = port;
+            this.db = db;
+        }
+
+        public void run() {
+            for (Server server: SERVERS) {
+                if (server.port != this.port) {
+                    // get getAll request to w
+                    StrPtr strptr = new StrPtr();
+                    if (sendMsg(server, "getAll", strptr)) {
+                        this.db.parseDatabase(strptr.str);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 	
 	public static void Lab4_serviceClients(LamportInterface lp, ServerSocket socket) throws Exception {
 		while (true) {
